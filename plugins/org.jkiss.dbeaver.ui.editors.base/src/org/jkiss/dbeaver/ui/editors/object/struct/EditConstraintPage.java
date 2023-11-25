@@ -55,7 +55,7 @@ public class EditConstraintPage extends AttributesSelectorPage {
     private DBSEntityReferrer constraint;
     private Collection<? extends DBSEntityAttributeRef> attributes;
 
-    private Map<DBSEntityConstraintType, String> TYPE_PREFIX = new HashMap<>();
+    private Map<DBSEntityConstraintType, String> TYPE_SUFFIX = new HashMap<>();
     private Group expressionGroup;
     private Text expressionText;
     private boolean enableConstraint = true;
@@ -107,11 +107,11 @@ public class EditConstraintPage extends AttributesSelectorPage {
         return this.constraintTypes.length == 1 && this.constraintTypes[0] == DBSEntityConstraintType.VIRTUAL_KEY;
     }
 
-    private void addTypePrefix(DBSEntityConstraintType type, String prefix) {
+    private void addTypeSuffix(DBSEntityConstraintType type, String suffix) {
         if (entity.getDataSource() != null) {
-            prefix = entity.getDataSource().getSQLDialect().storesUnquotedCase().transform(prefix);
+            suffix = entity.getDataSource().getSQLDialect().storesUnquotedCase().transform(suffix);
         }
-        TYPE_PREFIX.put(type, prefix);
+        TYPE_SUFFIX.put(type, suffix);
     }
 
     @Override
@@ -134,18 +134,15 @@ public class EditConstraintPage extends AttributesSelectorPage {
     protected void createContentsBeforeColumns(Composite panel)
     {
         if (entity != null) {
-            addTypePrefix(DBSEntityConstraintType.PRIMARY_KEY, "_PK");
-            addTypePrefix(DBSEntityConstraintType.UNIQUE_KEY, "_UN");
-            addTypePrefix(DBSEntityConstraintType.VIRTUAL_KEY, "_VK");
-            addTypePrefix(DBSEntityConstraintType.FOREIGN_KEY, "_FK");
-            addTypePrefix(DBSEntityConstraintType.CHECK, "_CHECK");
+            addTypeSuffix(DBSEntityConstraintType.PRIMARY_KEY, "_PK");
+            addTypeSuffix(DBSEntityConstraintType.UNIQUE_KEY, "_UN");
+            addTypeSuffix(DBSEntityConstraintType.VIRTUAL_KEY, "_VK");
+            addTypeSuffix(DBSEntityConstraintType.FOREIGN_KEY, "_FK");
+            addTypeSuffix(DBSEntityConstraintType.CHECK, "_CHECK");
 
             if (CommonUtils.isEmpty(this.constraintName)) {
-                String namePrefix = TYPE_PREFIX.get(constraintTypes[0]);
-                if (namePrefix == null) {
-                    namePrefix = "KEY";
-                }
-                this.constraintName = DBObjectNameCaseTransformer.transformName(entity.getDataSource(), CommonUtils.escapeIdentifier(entity.getName()) + namePrefix);
+                String nameSuffix = TYPE_SUFFIX.getOrDefault(constraintTypes[0], "KEY");
+                this.constraintName = DBObjectNameCaseTransformer.transformName(entity.getDataSource(), CommonUtils.escapeIdentifier(entity.getName()) + nameSuffix);
             }
         }
 
@@ -175,11 +172,11 @@ public class EditConstraintPage extends AttributesSelectorPage {
                 DBSEntityConstraintType oldType = selectedConstraintType;
                 selectedConstraintType = constraintTypes[typeCombo.getSelectionIndex()];
                 if (constraintName != null) {
-                    String oldPrefix = TYPE_PREFIX.get(oldType);
-                    if (oldPrefix != null && constraintName.endsWith(oldPrefix)) {
-                        String newPrefix = TYPE_PREFIX.get(selectedConstraintType);
-                        if (newPrefix != null) {
-                            constraintName = constraintName.substring(0, constraintName.length() - oldPrefix.length()) + newPrefix;
+                    String oldSuffix = TYPE_SUFFIX.get(oldType);
+                    if (oldSuffix != null && constraintName.endsWith(oldSuffix)) {
+                        String newSuffix = TYPE_SUFFIX.get(selectedConstraintType);
+                        if (newSuffix != null) {
+                            constraintName = constraintName.substring(0, constraintName.length() - oldSuffix.length()) + newSuffix;
                             if (nameText != null) {
                                 nameText.setText(constraintName);
                             }
@@ -275,6 +272,6 @@ public class EditConstraintPage extends AttributesSelectorPage {
     }
 
     public boolean isUseAllColumns() {
-        return this.useAllColumns;
-    }
+		return this.useAllColumns;
+	}
 }
