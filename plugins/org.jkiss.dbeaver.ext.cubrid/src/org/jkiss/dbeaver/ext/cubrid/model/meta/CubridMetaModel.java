@@ -27,6 +27,9 @@ import org.jkiss.dbeaver.ext.generic.model.*;
 import org.jkiss.dbeaver.ext.generic.model.meta.GenericMetaModel;
 import org.jkiss.dbeaver.ext.generic.model.meta.GenericMetaObject;
 import org.jkiss.dbeaver.model.DBUtils;
+import org.jkiss.dbeaver.model.exec.DBCQueryTransformProvider;
+import org.jkiss.dbeaver.model.exec.DBCQueryTransformType;
+import org.jkiss.dbeaver.model.exec.DBCQueryTransformer;
 import org.jkiss.dbeaver.model.exec.jdbc.JDBCPreparedStatement;
 import org.jkiss.dbeaver.model.exec.jdbc.JDBCResultSet;
 import org.jkiss.dbeaver.model.exec.jdbc.JDBCSession;
@@ -44,7 +47,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class CubridMetaModel extends GenericMetaModel
+public class CubridMetaModel extends GenericMetaModel implements DBCQueryTransformProvider
 {
     private static final Log log = Log.getLog(CubridMetaModel.class);
 
@@ -246,12 +249,7 @@ public class CubridMetaModel extends GenericMetaModel
             @NotNull JDBCResultSet dbResult)
             throws DBException {
         String name = JDBCUtils.safeGetStringTrimmed(dbResult, CubridConstants.NAME);
-        String description = JDBCUtils.safeGetString(dbResult, CubridConstants.COMMENT);
-        Number lastValue = JDBCUtils.safeGetInteger(dbResult, "current_val");
-        Number minValue = JDBCUtils.safeGetInteger(dbResult, "min_val");
-        Number maxValue = JDBCUtils.safeGetInteger(dbResult, "max_val");
-        Number incrementBy = JDBCUtils.safeGetInteger(dbResult, "increment_val");
-        return new CubridSequence(container, name, description, lastValue, minValue, maxValue, incrementBy, dbResult);
+        return new CubridSequence(container, name, dbResult);
     }
 
     @NotNull
@@ -405,5 +403,14 @@ public class CubridMetaModel extends GenericMetaModel
     @Override
     public DBCQueryPlanner getQueryPlanner(@NotNull GenericDataSource dataSource) {
         return new CubridQueryPlanner((CubridDataSource) dataSource);
+    }
+
+    @Nullable
+    @Override
+    public DBCQueryTransformer createQueryTransformer(@NotNull DBCQueryTransformType type) {
+        if (type == DBCQueryTransformType.RESULT_SET_LIMIT) {
+            return new QueryTransformerLimitCubrid();
+        }
+        return null;
     }
 }

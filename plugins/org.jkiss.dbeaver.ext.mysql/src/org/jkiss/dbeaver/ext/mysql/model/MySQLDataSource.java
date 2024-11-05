@@ -311,6 +311,19 @@ public class MySQLDataSource extends JDBCDataSource implements DBPObjectStatisti
                     0,
                     0));
         }
+        if ((isMariaDB() && isServerVersionAtLeast(5, 4))
+            || (!isMariaDB() && isServerVersionAtLeast(5, 7))
+            && dataTypeCache.getCachedObject(MySQLConstants.TYPE_GEOMETRY) == null) {
+            addGISDatatype(MySQLConstants.TYPE_GEOMETRY);
+            addGISDatatype(MySQLConstants.TYPE_POINT);
+            addGISDatatype(MySQLConstants.TYPE_LINESTRING);
+            addGISDatatype(MySQLConstants.TYPE_POLYGON);
+            addGISDatatype(MySQLConstants.TYPE_MULTIPOINT);
+            addGISDatatype(MySQLConstants.TYPE_MULTILINESTRING);
+            addGISDatatype(MySQLConstants.TYPE_MULTIPOLYGON);
+            addGISDatatype(MySQLConstants.TYPE_GEOMETRYCOLLECTION);
+
+        }
         if (isMariaDB() && isServerVersionAtLeast(10, 7) && dataTypeCache.getCachedObject(MySQLConstants.TYPE_UUID) == null) {
             // Not supported by MariaDB driver for now (3.0.8). Waiting for the driver support
             dataTypeCache.cacheObject(
@@ -433,6 +446,18 @@ public class MySQLDataSource extends JDBCDataSource implements DBPObjectStatisti
         }
     }
 
+    private void addGISDatatype(String typeGeometry) {
+        dataTypeCache.cacheObject(new JDBCDataType<>(this,
+            Types.OTHER,
+            typeGeometry.toUpperCase(Locale.ROOT),
+            typeGeometry.toUpperCase(Locale.ROOT),
+            false,
+            true,
+            0,
+            0,
+            0));
+    }
+
     @Override
     public DBSObject refreshObject(@NotNull DBRProgressMonitor monitor)
         throws DBException {
@@ -472,7 +497,7 @@ public class MySQLDataSource extends JDBCDataSource implements DBPObjectStatisti
 
     @NotNull
     @Override
-    public Class<? extends MySQLCatalog> getPrimaryChildType(@NotNull DBRProgressMonitor monitor) {
+    public Class<? extends MySQLCatalog> getPrimaryChildType(@Nullable DBRProgressMonitor monitor) {
         return MySQLCatalog.class;
     }
 
@@ -741,6 +766,10 @@ public class MySQLDataSource extends JDBCDataSource implements DBPObjectStatisti
     @Override
     public Collection<? extends DBSDataType> getLocalDataTypes() {
         return dataTypeCache.getCachedObjects();
+    }
+
+    public JDBCBasicDataTypeCache<MySQLDataSource, JDBCDataType> getDataTypeCache() {
+        return dataTypeCache;
     }
 
     @Override

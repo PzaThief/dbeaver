@@ -128,7 +128,7 @@ public class DBDAttributeBindingType extends DBDAttributeBindingNested implement
         return null;
     }
 
-    @Nullable
+    @NotNull
     @Override
     public DBSAttributeBase getAttribute() {
         return attribute;
@@ -137,28 +137,15 @@ public class DBDAttributeBindingType extends DBDAttributeBindingNested implement
     @Nullable
     @Override
     public Object extractNestedValue(@NotNull Object ownerValue, int itemIndex) throws DBCException {
-        // If we have a collection then use first element
-        while (ownerValue instanceof DBDCollection collection) {
-            if (collection.getItemCount() > itemIndex) {
-                ownerValue = collection.getItem(itemIndex);
-            } else {
-                // FIXME: Is always caused by arrays of structures. They are not supported now
-                log.trace("Collection index out of bounds: " + itemIndex);
-                return null;
-            }
+        if (ownerValue instanceof DBDCollection collection) {
+            return collection.get(itemIndex);
+        } else if (ownerValue instanceof DBDComposite composite) {
+            return composite.getAttributeValue(attribute);
+        } else if (ownerValue instanceof Map<?, ?> map) {
+            return map.get(getName());
+        } else {
+            return ownerValue;
         }
-        if (ownerValue instanceof DBDComposite) {
-            return ((DBDComposite) ownerValue).getAttributeValue(attribute);
-        } else if (ownerValue instanceof Map) {
-            return ((Map<?, ?>) ownerValue).get(getName());
-        } else if (ownerValue == null) {
-            return null;
-        }
-
-        DBDAttributeBinding parent = getParent(1);
-        log.debug("Can't extract field '" + getName() + "' from type '" + (parent == null ? null : parent.getName()) + "': wrong value (" + ownerValue + ")");
-
-        throw new DBCException(DBValueFormatting.getDefaultValueDisplayString(ownerValue, DBDDisplayFormat.NATIVE));
     }
 
     @Nullable

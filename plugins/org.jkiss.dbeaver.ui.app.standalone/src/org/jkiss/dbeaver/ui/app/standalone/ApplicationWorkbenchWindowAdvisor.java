@@ -399,16 +399,6 @@ public class ApplicationWorkbenchWindowAdvisor extends IDEWorkbenchWindowAdvisor
     }
 
     @Override
-    public void handleProjectAdd(@NotNull DBPProject project) {
-
-    }
-
-    @Override
-    public void handleProjectRemove(@NotNull DBPProject project) {
-
-    }
-
-    @Override
     public void handleActiveProjectChange(@NotNull DBPProject oldValue, @NotNull DBPProject newValue) {
         UIUtils.asyncExec(this::recomputeTitle);
     }
@@ -590,7 +580,7 @@ public class ApplicationWorkbenchWindowAdvisor extends IDEWorkbenchWindowAdvisor
             }
         }
         if (ps.getBoolean("SHOW_PRODUCT_IN_TITLE")) {
-            sj.add(GeneralUtils.getProductTitle());
+            sj.add(computeProductTitle());
         }
         IWorkbenchWindow window = getWindowConfigurer().getWindow();
         if (window != null) {
@@ -603,6 +593,11 @@ public class ApplicationWorkbenchWindowAdvisor extends IDEWorkbenchWindowAdvisor
             }
         }
         return sj.toString();
+    }
+
+    @NotNull
+    protected String computeProductTitle() {
+        return GeneralUtils.getProductTitle();
     }
 
 }
